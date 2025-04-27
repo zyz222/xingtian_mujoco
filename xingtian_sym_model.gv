@@ -1,0 +1,44 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"LF_hip" [label="LF_hip"];
+"LF_knee" [label="LF_knee"];
+"LF_wheel" [label="LF_wheel"];
+"LR_hip" [label="LR_hip"];
+"LR_knee" [label="LR_knee"];
+"LR_wheel" [label="LR_wheel"];
+"RF_hip" [label="RF_hip"];
+"RF_knee" [label="RF_knee"];
+"RF_wheel" [label="RF_wheel"];
+"RR_hip" [label="RR_hip"];
+"RR_knee" [label="RR_knee"];
+"RR_wheel" [label="RR_wheel"];
+"imu_link" [label="imu_link"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "LF_hip_joint" [label="xyz: 0.20857 0.1825 -0.00081409 \nrpy: 0 -0 0"]
+"LF_hip_joint" -> "LF_hip"
+"LF_hip" -> "LF_knee_joint" [label="xyz: -0.0806 -0.016 -0.11447 \nrpy: 0 -0 0"]
+"LF_knee_joint" -> "LF_knee"
+"LF_knee" -> "LF_wheel_joint" [label="xyz: 0.071909 0.016 -0.12012 \nrpy: 0 -0 0"]
+"LF_wheel_joint" -> "LF_wheel"
+"base_link" -> "LR_hip_joint" [label="xyz: -0.20857 0.1825 -0.00081409 \nrpy: 0 -0 0"]
+"LR_hip_joint" -> "LR_hip"
+"LR_hip" -> "LR_knee_joint" [label="xyz: 0.0806 -0.016 -0.11447 \nrpy: 0 -0 0"]
+"LR_knee_joint" -> "LR_knee"
+"LR_knee" -> "LR_wheel_joint" [label="xyz: -0.071909 0.016 -0.12012 \nrpy: 0 -0 0"]
+"LR_wheel_joint" -> "LR_wheel"
+"base_link" -> "RF_hip_joint" [label="xyz: 0.20857 -0.1825 -0.00081409 \nrpy: 0 -0 0"]
+"RF_hip_joint" -> "RF_hip"
+"RF_hip" -> "RF_knee_joint" [label="xyz: -0.0806 0.016 -0.11447 \nrpy: 0 -0 0"]
+"RF_knee_joint" -> "RF_knee"
+"RF_knee" -> "RF_wheel_joint" [label="xyz: 0.071909 -0.016 -0.12012 \nrpy: 0 -0 0"]
+"RF_wheel_joint" -> "RF_wheel"
+"base_link" -> "RR_hip_joint" [label="xyz: -0.20857 -0.1825 -0.00081409 \nrpy: 0 -0 0"]
+"RR_hip_joint" -> "RR_hip"
+"RR_hip" -> "RR_knee_joint" [label="xyz: 0.0806 0.016 -0.11447 \nrpy: 0 -0 0"]
+"RR_knee_joint" -> "RR_knee"
+"RR_knee" -> "RR_wheel_joint" [label="xyz: -0.071909 -0.016 -0.12012 \nrpy: 0 -0 0"]
+"RR_wheel_joint" -> "RR_wheel"
+"base_link" -> "imu_joint" [label="xyz: 0 0 0.0350984 \nrpy: 0 -0 0"]
+"imu_joint" -> "imu_link"
+}
