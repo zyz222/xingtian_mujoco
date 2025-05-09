@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence,Optional
 
 import numpy as np
 import pinocchio as pin
@@ -35,10 +35,16 @@ class FloatingBaseDynamics:
     # 构造
     # ------------------------------------------------------------------
     def __init__(self, urdf_path: str | pathlib.Path, package_dirs: Sequence[str | pathlib.Path] | None = None, visual: bool = True):
+        if not pathlib.Path(urdf_path).exists():
+            raise FileNotFoundError(f"URDF路径 '{urdf_path}' 不存在或无法访问。")
+        
         self.urdf_path = str(urdf_path)
         self.package_dirs = [str(d) for d in (package_dirs or [pathlib.Path(urdf_path).parent])]
         root_joint = pin.JointModelFreeFlyer()
         self.model = pin.buildModelFromUrdf(self.urdf_path, root_joint=root_joint)
+        print("关节顺序表 (含浮动基座):")
+        for i in range(1, len(self.model.names)):  # 跳过world关节
+            print(f"Index {i-1}: {self.model.names[i]}")
         self.data = self.model.createData()
         self.collision_model = pin.buildGeomFromUrdf(self.model, self.urdf_path, pin.GeometryType.COLLISION, package_dirs=self.package_dirs)
         self.visual_model    = pin.buildGeomFromUrdf(self.model, self.urdf_path, pin.GeometryType.VISUAL,    package_dirs=self.package_dirs)
@@ -61,14 +67,14 @@ class FloatingBaseDynamics:
     ############################################################################
     # 状态接口
     ############################################################################
-    def set_state(self, q, v=None):
+    def set_robot_state(self, q, v=None):
         self.q = q.copy()
         self.v = self.v if v is None else v.copy()
         # self.check_model()
         # self.display()
-    def get_state(self, copy=True):
+    def get_robot_state(self, copy=True):
         return (self.q.copy(), self.v.copy()) if copy else (self.q, self.v)
-
+    #下边两个是设置基座，目前没有用！！
     def set_base_pose(self, pos_xyz, quat_xyzw):
         self.q[:3] = pos_xyz
         self.q[3:7] = quat_xyzw
@@ -83,10 +89,12 @@ class FloatingBaseDynamics:
         q = self.q if q is None else q
         pin.forwardKinematics(self.model, self.data, q)
         if update_velocity:
-            pin.forwardVelocity(self.model, self.data, q, self.v)
-        pin.updateFramePlacements(self.model, self.data)
-
-    def frame_pose(self, name, q=None):
+            pin.computeGeneralizedGravity(self.model, self.data, q)
+            pin.computeJointJacobians(self.model, self.data)
+            pin.computeCoriolisMatrix(self.model, self.data,self.v)
+        pin.updateFramePlacements(self.model, self.data)      #更新数据
+    #获取指定帧的位姿
+    def frame_pose(self, name: str, q: Optional[np.ndarray] = None) -> pin.SE3:
         self.forward_kinematics(q)
         return self.data.oMf[self.model.getFrameId(name)].copy()
 
@@ -127,7 +135,7 @@ class FloatingBaseDynamics:
     ############################################################################
     def _leg_idx(self, foot):
         fid = self.model.getFrameId(foot)
-        jid = self.model.frames[fid].parent
+        jid = self.model.frames[fid].parentJoint
         chain, idx = [], []
         while jid:
             if self.model.joints[jid].nq: chain.append(jid)
@@ -135,11 +143,14 @@ class FloatingBaseDynamics:
         for j in reversed(chain): idx.extend(range(self.model.idx_qs[j], self.model.idx_qs[j]+self.model.nqs[j]))
         return idx
 
-    def foot_inverse_kinematics(self, foot, p_target_body, q_init=None, tol=1e-4, iters=100):
+    def foot_inverse_kinematics(self, foot, p_target_body, q_init=None, tol=1e-2, iters=10):
         q = (self.q if q_init is None else q_init).copy()
         idx = self._leg_idx(foot)
         for _ in range(iters):
-            err = p_target_body - self.foot_position(foot, "body", q)
+            err = p_target_body - self.foot_position(foot,q=q)
+            # print(f"p_target_body: {p_target_body},\n ")
+            # print(f"self.foot_position(foot, 'body', q): {self.foot_position(foot,q=q)}\n")
+            # print(f"IK 误差: {np.linalg.norm(err):.3f}\n")
             if np.linalg.norm(err) < tol: return q
             J = self.foot_jacobian(foot, q, "body")[:3, idx]
             dq = np.zeros(self.model.nv)
@@ -159,6 +170,7 @@ class FloatingBaseDynamics:
     # 动力学矩阵
     ############################################################################
     def mass_matrix(self, q=None):
+
         return pin.crba(self.model, self.data, self.q if q is None else q)
 
     def mass_matrix_inv(self, q=None):

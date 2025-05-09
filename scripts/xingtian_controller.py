@@ -14,9 +14,9 @@ import tty
 # -----------------------------------------------------------------------------
 from xingtian_robot import FloatingBaseDynamics
 
-# ★ 绝对路径更稳，也可以换成 ROS_PACKAGE_PATH
-URDF_PATH = "xingtian_sym_model/urdf/xingtian_fixed.urdf"
-MESH_DIRS = ["xingtian_sym_model/meshes"]
+# 绝对路径更稳，也可以换成 ROS_PACKAGE_PATH
+URDF_PATH = "../xingtian_sym_model/urdf/xingtian_sym_model.urdf"
+MESH_DIRS = ["../xingtian_sym_model/meshes"]
 
 # -----------------------------------------------------------------------------
 # 控制器主类
@@ -145,6 +145,19 @@ class MujocoController:
                 print(f"Keyboard input error: {e}")
                 break
 
+    def build_joint_mapping(model):
+        """构建用户自定义驱动顺序与Pinocchio关节索引的映射"""
+        joint_map = {
+            # 腿关节映射（髋、膝）
+            'LF_HIP': 1, 'LF_KNEE': 2,
+            'LR_HIP': 4, 'LR_KNEE': 5,
+            'RR_HIP': 10, 'RR_KNEE': 11, 
+            'RF_HIP': 7, 'RF_KNEE': 8,
+            # 轮关节映射
+            'LF_WHEEL': 3, 'LR_WHEEL': 6,
+            'RR_WHEEL': 12, 'RF_WHEEL':9
+        }
+        return joint_map
     # ------------------------------------------------------------------
     # 计算控制命令（核心）
     # ------------------------------------------------------------------
@@ -165,16 +178,9 @@ class MujocoController:
             self.wheel_torque = np.array(state['wheel_torque']).flatten()
             self.wheel_force = np.array(state['wheel_force']).flatten()
         # ------------------------------------------------------------------
-        # 把模拟器状态同步到 Pinocchio
-        # 模拟器返回顺序:
-        #   joint_pos  = [LF_hip, LF_knee, LR_hip, LR_knee, RR_hip, RR_knee, RF_hip, RF_knee]
-        #   wheel_pos  = [LF_wheel, LR_wheel, RR_wheel, RF_wheel]
-        # Pinocchio 顺序:
-        #   free-flyer (7)  +  LF(hip,knee,wheel)  +  LR(...)  +  RF(...)  +  RR(...)
-        #   即  q[ 7:10] = LF, q[10:13] = LR, q[13:16] = RF, q[16:19] = RR
-        # self.joint_pos[::2] -=2.18
-        # self.joint_pos[1::2] += 1.14         #水平向前为0度，后腿是向后
-        q = np.zeros(self.robot.model.nq)
+        # print(f"self.robot.model.nq:{self.robot.model.nq}")
+        # print(f"self.robot.model.nv:{self.robot.model.nv}")
+        q = np.zeros(self.robot.model.nq)      
         v = np.zeros(self.robot.model.nv)
         a = np.zeros(self.robot.model.nv)
         # --- free‑flyer ---
@@ -215,33 +221,44 @@ class MujocoController:
         v[15] = self.joint_vel[4]   # RR_hip_vel
         v[16] = self.joint_vel[5]   # RR_knee_vel
         v[17] = self.wheel_vel[2]   # RR_wheel_vel
-
+        # 关节顺序表 (含浮动基座):
+        # Index 0: root_joint
+        # Index 1: LF_hip_joint
+        # Index 2: LF_knee_joint
+        # Index 3: LF_wheel_joint
+        # Index 4: LR_hip_joint
+        # Index 5: LR_knee_joint
+        # Index 6: LR_wheel_joint
+        # Index 7: RF_hip_joint
+        # Index 8: RF_knee_joint
+        # Index 9: RF_wheel_joint
+        # Index 10: RR_hip_joint
+        # Index 11: RR_knee_joint
+        # Index 12: RR_wheel_joint
         # 同步到动力学模型
-        self.robot.set_state(q, v)
-        # 打印每个足端在 "world" 和 "body" 下的位置
-        # for foot in ['LF_wheel', 'LR_wheel', 'RF_wheel', 'RR_wheel']:
-        #     pos_world = self.robot.frame_pose(foot, q).translation
-        #     pos_body  = self.robot.foot_position(foot, 'body', q)
-        #     print(f"{foot}: world = {pos_world.round(3)}, body = {pos_body.round(3)}")
+        self.robot.set_robot_state(q, v)
 
+
+        print(f"self.robot.inverse_dynamics:{self.robot.inverse_dynamics(q, v, a)[6:]}\n")   #这个也没问题！！
         # 打印足端位置（body frame）
-        foot_pos_body = {f: self.robot.foot_position(f, 'body') for f in self.feet}
-        with self.print_lock:
-            print("Feet (body frame):", {k: p.round(3).tolist() for k, p in foot_pos_body.items()})
+        # foot_pos_body = {f: self.robot.foot_position(f, 'body') for f in self.feet}
+        # with self.print_lock:
+        #     print("Feet (body frame):", {k: p.round(3).tolist() for k, p in foot_pos_body.items()})
 
         # -------- 2) 选择模式控制策略 --------
         with self.mode_lock:
             mode = self.mode
         self.joint_tau = np.zeros(8)
         self.wheel_tau = np.zeros(4)
+
         if mode == 0:     #test 零位
             target_pos = np.zeros(8)
              # 如果模式切换了，重新插值初始化
             if self.last_mode != 0:
                 self.interpolation_step = 0
                 self.initial_pos = self.joint_pos.copy()
-            kp = 120.0
-            kd = 1.2
+            kp = 60.0
+            kd = 3
             total_steps = 500
             if self.interpolation_step < total_steps:
                 alpha = self.interpolation_step / total_steps
@@ -272,11 +289,32 @@ class MujocoController:
         elif mode == 2:  # Move (给轮子一个前驱扭矩)
             self.wheel_tau = np.ones(4)*2.0
         elif mode == 3:
+            self.joint_tau = [0,1,2,3,4,5,6,7]
+            self.wheel_tau = [0,1,2,3]
+        elif mode == 4:
+            if self.last_mode != 4:
+                self.interpolation_step = 0
+            a = np.zeros(18)
+            a[0:3] = [0,0,1]
+            total_steps = 500
+            if self.interpolation_step < total_steps:
+                alpha = self.interpolation_step / total_steps
+                self.interpolation_step += 1
+            else:
+                alpha = 1.0
+            a = (1 - alpha) * a
+            print(f"self.robot.inverse_dynamics:{self.robot.inverse_dynamics(q, v, a)}\n") 
+            # self.joint_tau = self.robot.inverse_dynamics(q, v, a)[6:]
+        elif mode == 5:
             pass  # Idle null torques
+
+
 
         self.last_mode = mode
 
         # -------- 3) 把腿关节力矩映射为 Pinocchio 的 12×1 tau -------- LF LR RR RF   前轴都朝右，后轴朝左
+        # 按照下边这个顺序发布！！
+        #LF_HIP  LF_KNEE LR_HIP  LR_KNEE    RR_HIP  RR_KNEE  RF_HIP  RF_KNEE LF_WHEEL LR_WHEEL  RR_WHEEL RF_WHEEL
         tau_full = np.zeros(self.robot.model.nv)
         tau_full[6:] = np.concatenate([self.joint_tau, self.wheel_tau])
 

@@ -42,7 +42,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/base_link.STL" />
+          filename="../meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -56,7 +56,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/base_link.STL" />
+          filename="../meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -82,7 +82,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/imu_link.STL" />
+          filename="../meshes/imu_link.STL" />
       </geometry>
       <material
         name="">
@@ -96,7 +96,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/imu_link.STL" />
+          filename="../meshes/imu_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -188,7 +188,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_hip.STL" />
+          filename="../meshes/LF_hip.STL" />
       </geometry>
       <material
         name="">
@@ -202,7 +202,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_hip.STL" />
+          filename="../meshes/LF_hip.STL" />
       </geometry>
     </collision>
   </link>
@@ -217,7 +217,7 @@
     <child
       link="LF_hip" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -246,7 +246,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_knee.STL" />
+          filename="../meshes/LF_knee.STL" />
       </geometry>
       <material
         name="">
@@ -260,7 +260,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_knee.STL" />
+          filename="../meshes/LF_knee.STL" />
       </geometry>
     </collision>
   </link>
@@ -275,7 +275,7 @@
     <child
       link="LF_knee" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -304,7 +304,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_wheel.STL" />
+          filename="../meshes/LF_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -318,13 +318,13 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LF_wheel.STL" />
+          filename="../meshes/LF_wheel.STL" />
       </geometry>
     </collision>
   </link>
   <joint
     name="LF_wheel_joint"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.071909 0.016 -0.12012"
       rpy="0 0 0" />
@@ -333,7 +333,9 @@
     <child
       link="LF_wheel" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
+    <limit  lower="-6.28318" upper="6.28318"
+          effort="10000" velocity="50"/>
   </joint>
   <link
     name="LR_hip">
@@ -357,7 +359,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_hip.STL" />
+          filename="../meshes/LR_hip.STL" />
       </geometry>
       <material
         name="">
@@ -371,7 +373,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_hip.STL" />
+          filename="../meshes/LR_hip.STL" />
       </geometry>
     </collision>
   </link>
@@ -380,7 +382,7 @@
     type="revolute">
     <origin
       xyz="-0.20857 0.1825 -0.00081409"
-      rpy="0 -2.18 0" />
+      rpy="0 2.18 0" />
     <parent
       link="base_link" />
     <child
@@ -415,7 +417,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_knee.STL" />
+          filename="../meshes/LR_knee.STL" />
       </geometry>
       <material
         name="">
@@ -429,7 +431,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_knee.STL" />
+          filename="../meshes/LR_knee.STL" />
       </geometry>
     </collision>
   </link>
@@ -438,7 +440,7 @@
     type="revolute">
     <origin
       xyz="0.0806 -0.016 -0.11447"
-      rpy="0 1.14 0" />
+      rpy="0 -1.14 0" />
     <parent
       link="LR_hip" />
     <child
@@ -473,7 +475,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_wheel.STL" />
+          filename="../meshes/LR_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -487,13 +489,13 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/LR_wheel.STL" />
+          filename="../meshes/LR_wheel.STL" />
       </geometry>
     </collision>
   </link>
   <joint
     name="LR_wheel_joint"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.071909 0.016 -0.12012"
       rpy="0 0 0" />
@@ -503,6 +505,8 @@
       link="LR_wheel" />
     <axis
       xyz="0 1 0" />
+    <limit  lower="-6.28318" upper="6.28318"
+          effort="10000" velocity="50"/>
   </joint>
   <link
     name="RR_hip">
@@ -526,7 +530,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_hip.STL" />
+          filename="../meshes/RR_hip.STL" />
       </geometry>
       <material
         name="">
@@ -540,7 +544,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_hip.STL" />
+          filename="../meshes/RR_hip.STL" />
       </geometry>
     </collision>
   </link>
@@ -549,13 +553,13 @@
     type="revolute">
     <origin
       xyz="-0.20857 -0.1825 -0.00081409"
-      rpy="0 -2.18 0" />
+      rpy="0 2.18 0" />
     <parent
       link="base_link" />
     <child
       link="RR_hip" />
     <axis
-      xyz="0 -1 0" />
+      xyz="0 1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -584,7 +588,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_knee.STL" />
+          filename="../meshes/RR_knee.STL" />
       </geometry>
       <material
         name="">
@@ -598,7 +602,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_knee.STL" />
+          filename="../meshes/RR_knee.STL" />
       </geometry>
     </collision>
   </link>
@@ -607,13 +611,13 @@
     type="revolute">
     <origin
       xyz="0.0806 0.016 -0.11447"
-      rpy="0 1.14 0" />
+      rpy="0 -1.14 0" />
     <parent
       link="RR_hip" />
     <child
       link="RR_knee" />
     <axis
-      xyz="0 -1 0" />
+      xyz="0 1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -642,7 +646,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_wheel.STL" />
+          filename="../meshes/RR_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -656,13 +660,13 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RR_wheel.STL" />
+          filename="../meshes/RR_wheel.STL" />
       </geometry>
     </collision>
   </link>
   <joint
     name="RR_wheel_joint"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.071909 -0.016 -0.12012"
       rpy="0 0 0" />
@@ -671,7 +675,9 @@
     <child
       link="RR_wheel" />
     <axis
-      xyz="0 -1 0" />
+      xyz="0 1 0" />
+    <limit  lower="-6.28318" upper="6.28318"
+          effort="10000" velocity="50"/>
   </joint>
   <link
     name="RF_hip">
@@ -695,7 +701,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_hip.STL" />
+          filename="../meshes/RF_hip.STL" />
       </geometry>
       <material
         name="">
@@ -709,7 +715,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_hip.STL" />
+          filename="../meshes/RF_hip.STL" />
       </geometry>
     </collision>
   </link>
@@ -753,7 +759,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_knee.STL" />
+          filename="../meshes/RF_knee.STL" />
       </geometry>
       <material
         name="">
@@ -767,7 +773,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_knee.STL" />
+          filename="../meshes/RF_knee.STL" />
       </geometry>
     </collision>
   </link>
@@ -811,7 +817,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_wheel.STL" />
+          filename="../meshes/RF_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -825,13 +831,13 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://xingtian_sym_model/meshes/RF_wheel.STL" />
+          filename="../meshes/RF_wheel.STL" />
       </geometry>
     </collision>
   </link>
   <joint
     name="RF_wheel_joint"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.071909 -0.016 -0.12012"
       rpy="0 0 0" />
@@ -841,5 +847,7 @@
       link="RF_wheel" />
     <axis
       xyz="0 -1 0" />
+    <limit  lower="-6.28318" upper="6.28318"
+          effort="10000" velocity="50"/>
   </joint>
 </robot>
