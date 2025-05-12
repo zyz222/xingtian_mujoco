@@ -78,7 +78,7 @@ class MainController:
                     else:
                         print(f"[INFO] State is already {self.state_cmd}, no change required")
 
-                print(f"[INFO] Received command:, {self.state_cmd} \n")
+                # print(f"[INFO] Received command:, {self.state_cmd} \n")
                 # 获取当前状态并更新轨迹
                 q = self.ctrl.q
                 v = self.ctrl.v

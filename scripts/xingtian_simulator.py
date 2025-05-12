@@ -12,13 +12,13 @@ class MujocoSimulator:
         # 初始化MuJoCo模型和数据
         self.mj_model = mujoco.MjModel.from_xml_path(model_path)
         self.mj_data = mujoco.MjData(self.mj_model)
-        initial_joint_angles = [0.0, -0.0, 0.0, -0.0, 0.0, -0.0, 0.0, -0.0]
-        for i in range(8):
-            self.mj_data.qpos[7 + i] = initial_joint_angles[i]
+        # initial_joint_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        # for i in range(8):
+        #     self.mj_data.qpos[7 + i] = initial_joint_angles[i]
 
-        # 注意后面轮子的初始角一般设0
-        for i in range(8, 12):
-            self.mj_data.qpos[7 + i] = 0.0
+        # # 注意后面轮子的初始角一般设0
+        # for i in range(8, 12):
+        #     self.mj_data.qpos[7 + i] = 0.0
         # 控制参数
         self.control_cmd = np.zeros(self.mj_model.nu)  # 控制指令
         self.sim_running = True  # 仿真运行标志

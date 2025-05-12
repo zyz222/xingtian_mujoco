@@ -10,11 +10,12 @@ class StandState(State):
 
 
     def execute(self, q, v, a, tau, user_command):
-        kp, kd = 120.0, 1.2
-        
+        # kp, kd = 120.0, 1.2
+
+        kp, kd = 12.0, 0.2
         # 目标位置（假设目标是12个自由度的关节位置）
         target_pos = np.array([-2.18, 1.14, q[9], -2.18, 1.14, q[12], -2.18, 1.14, q[15], -2.18, 1.14, q[18]])
-        
+        # print(f"q: {q}")
         # 当前的位置和速度
         current_q = q[-12:]
         current_v = v[-12:]
@@ -33,11 +34,11 @@ class StandState(State):
 
         # 使用线性插值来逐渐接近目标位置
         interpolated_target = (1 - alpha) * self.initial_pos + alpha * target_pos
-        print(f"self.interpolation_step: {self.interpolation_step}")
-        print(f"Alpha: {alpha}")
-        print(f"Interpolated Target: {interpolated_target}")
         # 使用PD控制器计算关节扭矩
-        tau_full = kp * (interpolated_target - current_q) - kd * current_v
+        a[6:] = interpolated_target
+        print(f"self.robot.inverse_dynamics:{self.dynamics.inverse_dynamics(q, v, a)[6:]}\n")   #这个也没问题！！
+        tau_full = kp * (interpolated_target - current_q) - kd * current_v + self.dynamics.inverse_dynamics(q,v,a)[6:]
+        # tau_full = self.dynamics.inverse_dynamics(q,v,a)
         tau_final = tau_full[-12:]
         # print(tau_final)
         # 返回计算后的关节扭矩并进行限制
@@ -45,8 +46,7 @@ class StandState(State):
 
     def state_enter(self, q, v):
         # 进入状态时初始化插值
-        if self.initial_pos is None:
-            self.initial_pos = q[-12:].copy()  # 将当前关节位置作为起始位置
+        self.initial_pos = q[-12:].copy()  # 将当前关节位置作为起始位置
         self.interpolation_step = 0  # 重置插值步数
         print("Entering StandState, initializing interpolation")
     def state_exit(self):

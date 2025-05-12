@@ -34,34 +34,35 @@ class FloatingBaseDynamics:
     # ------------------------------------------------------------------
     # 构造
     # ------------------------------------------------------------------
-    def __init__(self, urdf_path: str | pathlib.Path, package_dirs: Sequence[str | pathlib.Path] | None = None, visual: bool = True):
-        if not pathlib.Path(urdf_path).exists():
-            raise FileNotFoundError(f"URDF路径 '{urdf_path}' 不存在或无法访问。")
+    def __init__(self, mjcf_path: str | pathlib.Path, package_dirs: Sequence[str | pathlib.Path] | None = None, visual: bool = True):
+        if not pathlib.Path(mjcf_path).exists():
+            raise FileNotFoundError(f"URDF路径 '{mjcf_path}' 不存在或无法访问。")
         
-        self.urdf_path = str(urdf_path)
-        self.package_dirs = [str(d) for d in (package_dirs or [pathlib.Path(urdf_path).parent])]
+        self.mjcf_path = str(mjcf_path)
+        self.package_dirs = [str(d) for d in (package_dirs or [pathlib.Path(mjcf_path).parent])]
         root_joint = pin.JointModelFreeFlyer()
-        self.model = pin.buildModelFromUrdf(self.urdf_path, root_joint=root_joint)
+        self.model = pin.buildModelFromUrdf(self.mjcf_path, root_joint=root_joint)
         print("关节顺序表 (含浮动基座):")
         for i in range(1, len(self.model.names)):  # 跳过world关节
             print(f"Index {i-1}: {self.model.names[i]}")
         self.data = self.model.createData()
-        self.collision_model = pin.buildGeomFromUrdf(self.model, self.urdf_path, pin.GeometryType.COLLISION, package_dirs=self.package_dirs)
-        self.visual_model    = pin.buildGeomFromUrdf(self.model, self.urdf_path, pin.GeometryType.VISUAL,    package_dirs=self.package_dirs)
-        self.viz: MeshcatVisualizer | None = None
-        if visual:
-            try:
-                self.viz = MeshcatVisualizer(self.model, self.collision_model, self.visual_model)
-                self.viz.initViewer(open=True)
-                self.viz.loadViewerModel()
-                print("[Meshcat] 浏览器地址:", self.viz.viewer.url())
-            except Exception as e:
-                print("[Meshcat] 启动失败:", e)
+        # mesh_loader = None
+        # self.collision_model = pin.buildGeomFromMJCF(self.model, self.mjcf_path, pin.GeometryType.COLLISION, package_dirs)
+        # self.visual_model = pin.buildGeomFromMJCF(self.model, self.mjcf_path, pin.GeometryType.VISUAL, package_dirs)
+        # self.viz: MeshcatVisualizer | None = None
+        # if visual:
+        #     try:
+        #         self.viz = MeshcatVisualizer(self.model, self.collision_model, self.visual_model)
+        #         self.viz.initViewer(open=True)
+        #         self.viz.loadViewerModel()
+        #         print("[Meshcat] 浏览器地址:", self.viz.viewer.url())
+        #     except Exception as e:
+        #         print("[Meshcat] 启动失败:", e)
         self.q = pin.neutral(self.model)
         self.q[:3] = np.array([0, 0, 0])
         self.q[3:7] = np.array([0, 0, 0, 1])  # 单位四元数  xyzw
         self.v = np.zeros(self.model.nv)
-        print(f"在__init__中设置的初始状态: q = {self.q}, v = {self.v}")
+        # print(f"在__init__中设置的初始状态: q = {self.q}, v = {self.v}")
          
         
     ############################################################################
