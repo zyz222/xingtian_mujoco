@@ -116,48 +116,50 @@ class MujocoSimulator:
         joint_pos = {
             'LF_hip': self._get_sensor_data('LF_hip_pos'),
             'LF_knee': self._get_sensor_data('LF_knee_pos'),
+            'LF_wheel': self._get_sensor_data('LF_wheel_pos'),
             'LR_hip': self._get_sensor_data('LR_hip_pos'),
             'LR_knee': self._get_sensor_data('LR_knee_pos'),
-            'RR_hip': self._get_sensor_data('RR_hip_pos'),
-            'RR_knee': self._get_sensor_data('RR_knee_pos'),
+            'LR_wheel': self._get_sensor_data('LR_wheel_pos'),
             'RF_hip': self._get_sensor_data('RF_hip_pos'),
             'RF_knee': self._get_sensor_data('RF_knee_pos'),
-            'LF_wheel': self._get_sensor_data('LF_wheel_pos'),
-            'LR_wheel': self._get_sensor_data('LR_wheel_pos'),
-            'RR_wheel': self._get_sensor_data('RR_wheel_pos'),
-            'RF_wheel': self._get_sensor_data('RF_wheel_pos')
+            'RF_wheel': self._get_sensor_data('RF_wheel_pos'),
+            'RR_hip': self._get_sensor_data('RR_hip_pos'),
+            'RR_knee': self._get_sensor_data('RR_knee_pos'),
+            'RR_wheel': self._get_sensor_data('RR_wheel_pos')
+            
         }
 
         # 关节速度传感器
         joint_vel = {
             'LF_hip': self._get_sensor_data('LF_hip_vel'),
             'LF_knee': self._get_sensor_data('LF_knee_vel'),
+            'LF_wheel': self._get_sensor_data('LF_wheel_vel'),
             'LR_hip': self._get_sensor_data('LR_hip_vel'),
             'LR_knee': self._get_sensor_data('LR_knee_vel'),
-            'RR_hip': self._get_sensor_data('RR_hip_vel'),
-            'RR_knee': self._get_sensor_data('RR_knee_vel'),
+            'LR_wheel': self._get_sensor_data('LR_wheel_vel'),
             'RF_hip': self._get_sensor_data('RF_hip_vel'),
             'RF_knee': self._get_sensor_data('RF_knee_vel'),
-            'LF_wheel': self._get_sensor_data('LF_wheel_vel'),
-            'LR_wheel': self._get_sensor_data('LR_wheel_vel'),
-            'RR_wheel': self._get_sensor_data('RR_wheel_vel'),
-            'RF_wheel': self._get_sensor_data('RF_wheel_vel')
+            'RF_wheel': self._get_sensor_data('RF_wheel_vel'),
+            'RR_hip': self._get_sensor_data('RR_hip_vel'),
+            'RR_knee': self._get_sensor_data('RR_knee_vel'),
+            'RR_wheel': self._get_sensor_data('RR_wheel_vel')
         }
 
         # 关节扭矩传感器
         joint_torque = {
             'LF_hip': self._get_sensor_data('LF_hip_torque'),
             'LF_knee': self._get_sensor_data('LF_knee_torque'),
+            'LF_wheel': self._get_sensor_data('LF_wheel_torque'),
             'LR_hip': self._get_sensor_data('LR_hip_torque'),
             'LR_knee': self._get_sensor_data('LR_knee_torque'),
-            'RR_hip': self._get_sensor_data('RR_hip_torque'),
-            'RR_knee': self._get_sensor_data('RR_knee_torque'),
+            'LR_wheel': self._get_sensor_data('LR_wheel_torque'),
             'RF_hip': self._get_sensor_data('RF_hip_torque'),
             'RF_knee': self._get_sensor_data('RF_knee_torque'),
-            'LF_wheel': self._get_sensor_data('LF_wheel_torque'),
-            'LR_wheel': self._get_sensor_data('LR_wheel_torque'),
-            'RR_wheel': self._get_sensor_data('RR_wheel_torque'),
-            'RF_wheel': self._get_sensor_data('RF_wheel_torque')
+            'RF_wheel': self._get_sensor_data('RF_wheel_torque'),
+            'RR_hip': self._get_sensor_data('RR_hip_torque'),
+            'RR_knee': self._get_sensor_data('RR_knee_torque'),
+            'RR_wheel': self._get_sensor_data('RR_wheel_torque')
+            
         }
 
 # IMU数据
@@ -173,37 +175,28 @@ class MujocoSimulator:
         wheel_force = {
             'LF': self._get_sensor_data('LF_wheel_force'),
             'LR': self._get_sensor_data('LR_wheel_force'),
-            'RR': self._get_sensor_data('RR_wheel_force'),
-            'RF': self._get_sensor_data('RF_wheel_force')
+            'RF': self._get_sensor_data('RF_wheel_force'),
+            'RR': self._get_sensor_data('RR_wheel_force')
         }
         # 构建状态字典
         state = {
             'joint_pos': [joint_pos[j].tolist() for j in [
-                'LF_hip', 'LF_knee', 'LR_hip', 'LR_knee',
-                'RR_hip', 'RR_knee', 'RF_hip', 'RF_knee'
+                'LF_hip', 'LF_knee','LF_wheel', 'LR_hip', 'LR_knee','LR_wheel',
+                'RF_hip', 'RF_knee','RF_wheel','RR_hip', 'RR_knee',  'RR_wheel'
             ]],
             'joint_vel': [joint_vel[j].tolist() for j in [
-                'LF_hip', 'LF_knee', 'LR_hip', 'LR_knee',
-                'RR_hip', 'RR_knee', 'RF_hip', 'RF_knee'
+                 'LF_hip', 'LF_knee','LF_wheel', 'LR_hip', 'LR_knee','LR_wheel',
+                'RF_hip', 'RF_knee','RF_wheel','RR_hip', 'RR_knee',  'RR_wheel'
             ]],
             'joint_torque': [joint_torque[j].tolist() for j in [
-                'LF_hip', 'LF_knee', 'LR_hip', 'LR_knee',
-                'RR_hip', 'RR_knee', 'RF_hip', 'RF_knee'
-            ]],
-            'wheel_pos': [joint_pos[j].tolist() for j in [
-                'LF_wheel', 'LR_wheel', 'RR_wheel', 'RF_wheel'
-            ]],
-            'wheel_vel': [joint_vel[j].tolist() for j in [
-                'LF_wheel', 'LR_wheel', 'RR_wheel', 'RF_wheel'
-            ]],
-            'wheel_torque': [joint_torque[j].tolist() for j in [
-                'LF_wheel', 'LR_wheel', 'RR_wheel', 'RF_wheel'
+                 'LF_hip', 'LF_knee','LF_wheel', 'LR_hip', 'LR_knee','LR_wheel',
+                'RF_hip', 'RF_knee','RF_wheel','RR_hip', 'RR_knee',  'RR_wheel'
             ]],
             'wheel_force': [wf.tolist() for wf in [
                 wheel_force['LF'],
                 wheel_force['LR'],
-                wheel_force['RR'],
-                wheel_force['RF']
+                wheel_force['RF'],
+                wheel_force['RR']
             ]],
             'imu': {
                 'quat': imu_data['quat'].tolist(),
