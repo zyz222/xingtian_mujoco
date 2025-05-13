@@ -43,14 +43,23 @@ class KeyboardController:
                 'c': (None, {"vx": 0.0, "vy": 0.0, "wz": -0.1})
             }
 
-            state_cmd, vel = cmd_map.get(key.lower(), (None, None))
+            # 获取当前指令
+            if key.lower() in cmd_map:
+                state_cmd, vel = cmd_map[key.lower()]
+            else:
+                print(f"无效的指令：'{key.lower()}'，请输入有效指令。")
+                continue  # 如果是无效指令，跳过此轮循环
+
+            # 如果命令是退出，设置停止事件
             if state_cmd == "quit":
                 self.stop_event.set()
             
+            # 处理命令并将其添加到命令队列
             if state_cmd or vel:
                 current_cmd = state_cmd if state_cmd else self.command_queue.queue[0][0] if not self.command_queue.empty() else "passive"
                 current_vel = {k: v + vel[k] for k, v in default_vel.items()} if vel else default_vel
                 self.command_queue.put((current_cmd, current_vel))
+
                 
 
     def start(self, stop_event):

@@ -70,17 +70,17 @@
 
       <body name="LR_hip" pos="-0.20857 0.1825 -0.00081409">
         <inertial pos="0.038059 -0.0086135 -0.030705" quat="0.648529 -0.260727 -0.263331 0.664898" mass="0.25238" diaginertia="0.00068835 0.000638561 6.28183e-05"/>
-        <joint name="LR_hip_joint" pos="0 0 0" axis="0 1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "-2.18"/>
+        <joint name="LR_hip_joint" pos="0 0 0" axis="0 -1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "-2.18"/>
         <geom type="mesh" rgba="0.12 0.15 0.18 1" mesh="LR_hip" contype="1" conaffinity="0" group="1" density="0" />
 
         <body name="LR_knee" pos="0.0806 -0.016 -0.11447">
           <inertial pos="-0.04128 0.020491 -0.068957" quat="0.682807 0.193017 0.183788 0.68025" mass="0.10231" diaginertia="0.000229761 0.000222624 8.70614e-06"/>
-          <joint name="LR_knee_joint" pos="0 0 0" axis="0 1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "1.14"/>
+          <joint name="LR_knee_joint" pos="0 0 0" axis="0 -1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "1.14"/>
           <geom type="mesh" rgba="0.1 0.5 1 0.9"  mesh="LR_knee" contype="1" conaffinity="0" group="1" density="0"  />
 
           <body name="LR_wheel" pos="-0.071909 0.016 -0.12012">
             <inertial pos="0 0.039 0" quat="0.707107 0 0 0.707107" mass="3.5088" diaginertia="0.013977 0.0077572 0.0077572"/>
-            <joint name="LR_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+            <joint name="LR_wheel_joint" pos="0 0 0" axis="0 -1 0"/>
             <geom type="mesh" rgba="1 0.4 0 1" mesh="LR_wheel" contype="1" conaffinity="1" group="1" density="0" friction="0.6 0.1 0.2"/>
             <site name="LR_wheel" pos="0 0 0" />
           </body>
@@ -104,15 +104,15 @@
       </body>
       <body name="RR_hip" pos="-0.20857 -0.1825 -0.00081409">
         <inertial pos="0.038059 0.0086135 -0.030705" quat="0.664898 -0.263331 -0.260727 0.648529" mass="0.25238" diaginertia="0.00068835 0.000638561 6.28183e-05"/>
-        <joint name="RR_hip_joint" pos="0 0 0" axis="0 1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "-2.18" />
+        <joint name="RR_hip_joint" pos="0 0 0" axis="0 -1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "-2.18" />
         <geom type="mesh" rgba="0.12 0.15 0.18 1" mesh="RR_hip" contype="1" conaffinity="0" group="1" density="0" />
         <body name="RR_knee" pos="0.0806 0.016 -0.11447">
           <inertial pos="-0.04128 -0.020491 -0.068957" quat="0.68025 0.183788 0.193017 0.682807" mass="0.10231" diaginertia="0.000229761 0.000222624 8.70614e-06"/>
-          <joint name="RR_knee_joint" pos="0 0 0" axis="0 1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "1.14"/>
+          <joint name="RR_knee_joint" pos="0 0 0" axis="0 -1 0" range="-3.14 3.14" actuatorfrcrange="-50 50" ref = "1.14"/>
           <geom type="mesh" rgba="0.1 0.5 1 0.9"  mesh="RR_knee" contype="1" conaffinity="0" group="1" density="0" />
           <body name="RR_wheel" pos="-0.071909 -0.016 -0.12012">
             <inertial pos="0 -0.039 0" quat="0.707107 0 0 0.707107" mass="3.5088" diaginertia="0.013977 0.0077572 0.0077572"/>
-            <joint name="RR_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+            <joint name="RR_wheel_joint" pos="0 0 0" axis="0 -1 0"/>
             <geom type="mesh" rgba="1 0.4 0 1" mesh="RR_wheel" contype="1" conaffinity="1" group="1" density="0" friction="0.6 0.1 0.2"/>
             <site name="RR_wheel" pos="0 0 0" />
           </body>

@@ -217,7 +217,7 @@
     <child
       link="LF_hip" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -275,7 +275,7 @@
     <child
       link="LF_knee" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -333,7 +333,7 @@
     <child
       link="LF_wheel" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit  lower="-6.28318" upper="6.28318"
           effort="10000" velocity="50"/>
   </joint>
@@ -382,7 +382,7 @@
     type="revolute">
     <origin
       xyz="-0.20857 0.1825 -0.00081409"
-      rpy="0 2.18 0" />
+      rpy="0 -2.18 0" />
     <parent
       link="base_link" />
     <child
@@ -440,7 +440,7 @@
     type="revolute">
     <origin
       xyz="0.0806 -0.016 -0.11447"
-      rpy="0 -1.14 0" />
+      rpy="0 1.14 0" />
     <parent
       link="LR_hip" />
     <child
@@ -553,7 +553,7 @@
     type="revolute">
     <origin
       xyz="-0.20857 -0.1825 -0.00081409"
-      rpy="0 2.18 0" />
+      rpy="0 -2.18 0" />
     <parent
       link="base_link" />
     <child
@@ -611,7 +611,7 @@
     type="revolute">
     <origin
       xyz="0.0806 0.016 -0.11447"
-      rpy="0 -1.14 0" />
+      rpy="0 1.14 0" />
     <parent
       link="RR_hip" />
     <child
@@ -730,7 +730,7 @@
     <child
       link="RF_hip" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -788,7 +788,7 @@
     <child
       link="RF_knee" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit
       lower="-3.14"
       upper="3.14"
@@ -846,7 +846,7 @@
     <child
       link="RF_wheel" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
     <limit  lower="-6.28318" upper="6.28318"
           effort="10000" velocity="50"/>
   </joint>

@@ -45,6 +45,10 @@ class FloatingBaseDynamics:
         print("关节顺序表 (含浮动基座):")
         for i in range(1, len(self.model.names)):  # 跳过world关节
             print(f"Index {i-1}: {self.model.names[i]}")
+
+        # for f in self.model.frames:
+        #     if f.name == "LF_wheel":
+        #         print(f.name, f.type)
         self.data = self.model.createData()
         # mesh_loader = None
         # self.collision_model = pin.buildGeomFromMJCF(self.model, self.mjcf_path, pin.GeometryType.COLLISION, package_dirs)
@@ -75,30 +79,31 @@ class FloatingBaseDynamics:
         # self.display()
     def get_robot_state(self, copy=True):
         return (self.q.copy(), self.v.copy()) if copy else (self.q, self.v)
-    #下边两个是设置基座，目前没有用！！
-    def set_base_pose(self, pos_xyz, quat_xyzw):
-        self.q[:3] = pos_xyz
-        self.q[3:7] = quat_xyzw
 
-    def set_base_twist(self, spatial_vel):
-        self.v[:6] = spatial_vel
 
     ############################################################################
-    # 正运动学 / 帧工具
+    # 正运动学 / 帧工具   
     ############################################################################
-    def forward_kinematics(self, q=None, update_velocity=False):
+    def forward_kinematics(self, q: Optional[np.ndarray] = None) -> None:
+        """缓存正运动学结果。"""
         q = self.q if q is None else q
         pin.forwardKinematics(self.model, self.data, q)
-        if update_velocity:
-            pin.computeGeneralizedGravity(self.model, self.data, q)
-            pin.computeJointJacobians(self.model, self.data)
-            pin.computeCoriolisMatrix(self.model, self.data,self.v)
-        pin.updateFramePlacements(self.model, self.data)      #更新数据
-    #获取指定帧的位姿
+        pin.updateFramePlacements(self.model, self.data)
+            
+    # 返回坐标系的位置
     def frame_pose(self, name: str, q: Optional[np.ndarray] = None) -> pin.SE3:
         self.forward_kinematics(q)
-        return self.data.oMf[self.model.getFrameId(name)].copy()
-
+        return self.data.oMf[self.model.getFrameId(name)].copy()      
+    def foot_position(self, foot, frame="world", q=None):
+        T_wf = self.frame_pose(foot, q)
+        if frame == "world":
+            return T_wf.translation
+        T_wb = self.frame_pose("base_link", q)
+        if frame == "body":
+            return T_wb.rotation.T @ (T_wf.translation - T_wb.translation)
+        if frame == "foot":
+            return np.zeros(3)
+        raise ValueError("frame 需为 world/body/foot")
     ############################################################################
     # 足端接口
     ############################################################################
@@ -115,49 +120,114 @@ class FloatingBaseDynamics:
         return feet
         
 
-    def foot_position(self, foot, frame="world", q=None):
-        T_wf = self.frame_pose(foot, q)
-        if frame == "world":
-            return T_wf.translation
-        T_wb = self.frame_pose("base_link", q)
-        if frame == "body":
-            return T_wb.rotation.T @ (T_wf.translation - T_wb.translation)
-        if frame == "foot":
-            return np.zeros(3)
-        raise ValueError("frame 需为 world/body/foot")
+    
 
     def foot_jacobian(self, foot, q=None, frame="foot"):
         q = self.q if q is None else q
         ref = {"foot": pin.LOCAL, "world": pin.WORLD, "body": pin.LOCAL_WORLD_ALIGNED}[frame]
         return pin.computeFrameJacobian(self.model, self.data, q, self.model.getFrameId(foot), ref)
+    
+    def foot_jacobian_dot_v(self, foot: str, q: Optional[np.ndarray] = None, v: Optional[np.ndarray] = None, frame: str = "foot") -> np.ndarray:
+        """Compute Jdot * v for the specified foot frame.
 
+        Steps:
+        1. Compute joint Jacobians and their time variation.
+        2. Retrieve the frame Jacobian time variation via `getFrameJacobianTimeVariation`.
+        3. Multiply by joint velocity vector v to obtain the 6‑D spatial acceleration term.
+        """
+        q = self.q if q is None else q
+        v = self.v if v is None else v
+        ref = {"foot": pin.LOCAL, "world": pin.WORLD, "body": pin.LOCAL_WORLD_ALIGNED}[frame]
+
+        # 1) compute J(q) and Jdot(q,v)
+        pin.computeJointJacobians(self.model, self.data, q)
+        pin.computeJointJacobiansTimeVariation(self.model, self.data, q, v)
+        pin.updateFramePlacements(self.model, self.data)
+
+        # 2) get frame-level Jdot
+        fid = self.model.getFrameId(foot)
+        Jdot = pin.getFrameJacobianTimeVariation(self.model, self.data, fid, ref)
+
+        # 3) Jdot * v
+        return Jdot @ v
     ############################################################################
     # 逆运动学 / 速度学
     ############################################################################
-    def _leg_idx(self, foot):
+    def _leg_idx(self, foot: str) -> List[int]:
         fid = self.model.getFrameId(foot)
         jid = self.model.frames[fid].parentJoint
-        chain, idx = [], []
+        chain: List[int] = []
         while jid:
-            if self.model.joints[jid].nq: chain.append(jid)
+            joint = self.model.joints[jid]
+            if joint.shortname() == "JointModelFreeFlyer":
+                break
+            if joint.nq:
+                chain.append(jid)
             jid = self.model.parents[jid]
-        for j in reversed(chain): idx.extend(range(self.model.idx_qs[j], self.model.idx_qs[j]+self.model.nqs[j]))
+        idx: List[int] = []
+        for j in reversed(chain):
+            idx.extend(range(self.model.idx_qs[j], self.model.idx_qs[j] + self.model.nqs[j]))
         return idx
+    def is_target_reachable(self, foot: str, p_target_body: np.ndarray, margin: float = 0.01) -> bool:
+        """
+        判断目标足端位置是否在工作空间内。
+        :param foot: 足端 frame 名称
+        :param p_target_body: 目标足端位置 (机体坐标系下)
+        :param margin: 安全裕度，默认 1cm
+        :return: True 可达，False 不可达
+        """
+        idx = self._leg_idx(foot)  
+        link_lengths = []
+        
+        # 计算腿部各连杆长度
+        for j in idx:
+            joint_placement = self.model.jointPlacements[j]
+            link_length = np.linalg.norm(joint_placement.translation)
+            link_lengths.append(link_length)
 
-    def foot_inverse_kinematics(self, foot, p_target_body, q_init=None, tol=1e-2, iters=10):
+   
+
+        total_length = sum(link_lengths) + margin  # 加上安全裕度
+        target_dist = np.linalg.norm(p_target_body)
+
+        print(f"[Reachability Check] Foot: {foot}, Target Distance: {target_dist:.3f}, Max Reach: {total_length:.3f}")
+
+        return target_dist <= total_length
+    # *代表是分割符，代表是关键字参数
+    def foot_inverse_kinematics(self, foot: str, p_target_body: np.ndarray, *, q_init: Optional[np.ndarray] = None, tol: float = 1e-3, max_iters: int = 40, regularization: float = 1e-4) -> np.ndarray:
+        #初始化关节角度
         q = (self.q if q_init is None else q_init).copy()
         idx = self._leg_idx(foot)
-        for _ in range(iters):
-            err = p_target_body - self.foot_position(foot,q=q)
-            # print(f"p_target_body: {p_target_body},\n ")
-            # print(f"self.foot_position(foot, 'body', q): {self.foot_position(foot,q=q)}\n")
-            # print(f"IK 误差: {np.linalg.norm(err):.3f}\n")
-            if np.linalg.norm(err) < tol: return q
-            J = self.foot_jacobian(foot, q, "body")[:3, idx]
-            dq = np.zeros(self.model.nv)
-            dq[idx] = np.linalg.pinv(J) @ err
-            q = pin.integrate(self.model, q, dq)
-        raise RuntimeError("IK 未收敛")
+        if self.is_target_reachable(foot, p_target_body):
+            try:
+                for i in range(max_iters):
+                    err = p_target_body - self.foot_position(foot,"body", q)
+                    # print("Current foot position:", self.foot_position(foot,"body", q))
+                    # print("Target foot position:", p_target_body)
+                    # print("Error norm:", np.linalg.norm(err))
+                    # 如果误差小于容忍度，则结束
+                    if np.linalg.norm(err) < tol:
+                        print("IK Converged!")
+                        return q
+                    
+                    J = self.foot_jacobian(foot, q=q, frame="body")[:3, idx]
+                    
+                    # 伪逆计算，加入正则化项
+                    J_pseudo_inv = J.T @ np.linalg.inv(J @ J.T + regularization * np.eye(3))
+                    # J_pseudo_inv = np.linalg.pinv(J + regularization * np.eye(J.shape[1]))  # Tikhonov Regularization
+                    dq_leg = J_pseudo_inv @ err
+                    
+                    dq = np.zeros(self.model.nv)
+                    dq[idx] = dq_leg
+                    
+                    q = pin.integrate(self.model, q, dq)          # 将关节速度增量进行积分到关节位置上
+                    
+                raise RuntimeError("IK did not converge in the given iterations.")
+            except RuntimeError as e:
+                print("IK Failed:", e)
+        else:
+            print("⚠️ 目标位置不可达，跳过逆解！")
+        
 
     def foot_inverse_velocity(self, foot, v_foot_body, q=None):
         q = self.q if q is None else q
@@ -170,26 +240,41 @@ class FloatingBaseDynamics:
     ############################################################################
     # 动力学矩阵
     ############################################################################
-    def mass_matrix(self, q=None):
-
+    def mass_matrix(self, q: Optional[np.ndarray] = None) -> np.ndarray:
+        """计算质量矩阵 M(q)。"""
         return pin.crba(self.model, self.data, self.q if q is None else q)
 
-    def mass_matrix_inv(self, q=None):
-        return np.linalg.inv(self.mass_matrix(q))
+    def mass_matrix_inv(self, q: Optional[np.ndarray] = None) -> np.ndarray:
+        """计算质量矩阵的逆 M⁻¹(q)。"""
+        M = self.mass_matrix(q)
+        return np.linalg.inv(M)
 
-    def coriolis_matrix(self, q=None, v=None):
+    def coriolis_matrix(self, q: Optional[np.ndarray] = None, v: Optional[np.ndarray] = None) -> np.ndarray:
+        """计算科氏矩阵 C(q,v)。"""
         q = self.q if q is None else q
         v = self.v if v is None else v
         pin.computeCoriolisMatrix(self.model, self.data, q, v)
         return self.data.C.copy()
 
-    def gravity_vector(self, q=None):
+    def gravity_vector(self, q: Optional[np.ndarray] = None) -> np.ndarray:
+        """计算重力向量 g(q)。"""
         return pin.computeGeneralizedGravity(self.model, self.data, self.q if q is None else q)
 
-    def inverse_dynamics(self, q, v, a):
+    def nonlinear_effects(self, q: Optional[np.ndarray] = None, v: Optional[np.ndarray] = None) -> np.ndarray:
+        """计算非线性项 b(q,v) = C(q,v)·v + g(q)。"""
+        q = self.q if q is None else q
+        v = self.v if v is None else v
+        return self.coriolis_matrix(q, v) @ v + self.gravity_vector(q)
+    
+    # ------------------------------------------------------------------
+    # 正 / 逆动力学
+    # ------------------------------------------------------------------
+    def inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a: np.ndarray) -> np.ndarray:
+        """计算逆动力学 (关节扭矩)。"""
         return pin.rnea(self.model, self.data, q, v, a)
 
-    def forward_dynamics(self, q, v, tau):
+    def forward_dynamics(self, q: np.ndarray, v: np.ndarray, tau: np.ndarray) -> np.ndarray:
+        """计算正动力学 (关节加速度)。"""
         return pin.aba(self.model, self.data, q, v, tau)
 
     ############################################################################
@@ -197,29 +282,32 @@ class FloatingBaseDynamics:
     ############################################################################
     # --- 扭矩 -> 力 ----------------------------------------------------
     def foot_forces_from_torques(self, tau: np.ndarray, feet: Sequence[str] | None = None, frame: str = "foot", q=None):
-        """给定关节扭矩 *tau*，估算每只脚的接触力 *F*（最小二乘）。
-
-        假设 `Jᵀ F = τ`，将多脚 Jacobian 叠加后解 F。
-        *feet* 为空时默认全部足端；*frame* 指定返回力的表达坐标系。
-        返回 dict {foot: 6×1 扳手}。若使用 3D 力，可取向量最后三维。"""
+        """给定关节扭矩 *tau*，估算每只脚的接触力 *F*（最小二乘）。"""
         feet = list(self.foot_frames()) if feet is None else list(feet)
         if not feet:
             raise ValueError("feet 列表为空，无法估算足端力")
 
-
-        q = self.q if q is None else q
-        self.forward_kinematics(q)
-        feet = list(self.foot_frames()) if feet is None else list(feet)
+        q = self.q if q is None else q                                  # 获取当前关节角度
+        self.forward_kinematics(q)                                       # 计算当前角度下的所有链路位姿。
         JTs, order = [], []
-        for f in feet:
-            JT = self.foot_jacobian(f, q, "foot").T  # nv×6
+        for f in feet:      # 遍历每个足端
+            JT = self.foot_jacobian(f, q, "foot").T  # nv × 6        6*18  雅可比矩阵     18*6
             JTs.append(JT)
             order.append(f)
-        JT_stack = np.hstack(JTs)             # nv × (6·m)
-        F_stack = np.linalg.pinv(JT_stack) @ tau  # (6·m)
+
+        JT_stack = np.hstack(JTs)  # nv × (6 * m)      横向拼接   18*24的雅可比矩阵
+        
+        # 🚨 关键修改：去掉基座自由度，只保留关节自由度
+        JT_stack_reduced = JT_stack[6:, :]  # 只保留关节相关的 Jacobian   去掉前6行
+        tau_reduced = tau  # 只保留关节相关的扭矩
+
+        # 最小二乘求解足端力
+        F_stack = np.linalg.pinv(JT_stack_reduced) @ tau_reduced  # (6 * m, )
+
+        # 解析各足端力
         forces = {}
         for i, foot in enumerate(order):
-            wrench = F_stack[6*i:6*(i+1)]
+            wrench = F_stack[6 * i:6 * (i + 1)]     #按每六个元素划分。
             if frame == "world":
                 R = self.frame_pose(foot, q).rotation
                 wrench[:3], wrench[3:] = R @ wrench[:3], R @ wrench[3:]
@@ -228,7 +316,9 @@ class FloatingBaseDynamics:
                 Rf = self.frame_pose(foot, q).rotation
                 wrench[:3], wrench[3:] = Rb.T @ (Rf @ wrench[:3]), Rb.T @ (Rf @ wrench[3:])
             forces[foot] = wrench
+
         return forces
+
 
     # --- 力 -> 扭矩 ----------------------------------------------------
     def joint_torques_from_forces(self, forces: Dict[str, np.ndarray], frame="foot", q=None):

@@ -10,8 +10,8 @@ import time
 from xingtian_robot import FloatingBaseDynamics
 
 # 绝对路径更稳，也可以换成 ROS_PACKAGE_PATH
-URDF_PATH = "../xingtian_sym_model/urdf/xingtian_sym_model.urdf"
-MESH_DIRS = ["../xingtian_sym_model/meshes"]
+URDF_PATH = "xingtian_sym_model/urdf/xingtian_sym_model.urdf"
+MESH_DIRS = ["xingtian_sym_model/meshes"]
 
 # -----------------------------------------------------------------------------
 # 控制器主类
@@ -114,6 +114,7 @@ class MujocoController:
             self.body_acc_w = np.asarray(state['imu']['gyro']).flatten()
             self.wheel_force = np.array(state['wheel_force']).flatten()
             self.get_current_q_v()    #将q v a更新
+            self.robot.set_robot_state(self.q, self.v)
     # ------------------------------------------------------------------
     # 计算控制命令（核心）
     # ------------------------------------------------------------------
